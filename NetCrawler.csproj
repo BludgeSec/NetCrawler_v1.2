@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{82AAA8C8-D1EA-4CE1-A258-BF72381FC75A}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>scraper2</RootNamespace>
-    <AssemblyName>scraper2</AssemblyName>
+    <RootNamespace>NetCrawler</RootNamespace>
+    <AssemblyName>NetCrawler v1.0</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -87,6 +87,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
