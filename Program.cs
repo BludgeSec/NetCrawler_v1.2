@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace scraper2
+namespace NetCrawler
 {
     internal static class Program
     {

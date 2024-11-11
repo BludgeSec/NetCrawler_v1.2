@@ -1,4 +1,4 @@
-﻿namespace scraper2
+﻿namespace NetCrawler
 {
     partial class Form1
     {
@@ -121,7 +121,7 @@
             this.Controls.Add(this.GetIP);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "Scraper v2.1";
+            this.Text = "NetCrawler v1.0";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();

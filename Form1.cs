@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Management;
 
-namespace scraper2
+namespace NetCrawler
 {
     public partial class Form1 : Form
     {
