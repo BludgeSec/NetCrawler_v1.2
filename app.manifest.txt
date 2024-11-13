@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v3">
+    <application xmlns="urn:schemas-microsoft-com:asm.v3">
+        <windowsSettings>
+            <!-- Request Administrator rights -->
+            <requestedExecutionLevel level="requireAdministrator" uiAccess="false"/>
+        </windowsSettings>
+    </application>
+</assembly>

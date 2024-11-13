@@ -8,6 +8,10 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Management;
+using System.Security.Principal;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+
 
 namespace NetCrawler
 {
@@ -43,9 +47,15 @@ namespace NetCrawler
             listView1.Columns.Add("Response Time", 50); 
             listView1.Columns.Add("Shared Folders", 50);
             listView1.Columns.Add("Open SMB Ports", 150);
+            listView1.Columns.Add("Credentials Required", 150);
 
             // Add context menu strip
             ContextMenuStrip contextMenu = new ContextMenuStrip();
+
+            ToolStripMenuItem checkSharedItemsItem = new ToolStripMenuItem("Check Shared Items");
+            checkSharedItemsItem.Click += ListSharedItemsItem_Click;
+            contextMenu.Items.Add(checkSharedItemsItem);
+
             ToolStripMenuItem openRootFolderItem = new ToolStripMenuItem("Open Root Shared Folder");
             openRootFolderItem.Click += OpenRootFolderItem_Click;
             contextMenu.Items.Add(openRootFolderItem);
@@ -85,6 +95,132 @@ namespace NetCrawler
                 DownloadSharedFolders(ipAddress);
             }
         }
+
+        private void ListSharedItemsItem_Click(object sender, EventArgs e)
+        {
+            if (listView1.SelectedItems.Count > 0)
+            {
+                string ipAddress = listView1.SelectedItems[0].Text;
+
+                // Try to access shared folders using current user's credentials
+                if (AccessSharedFolderWithCurrentUserCredentials(ipAddress))
+                {
+                    int sharedItemsCount = GetSharedFoldersCount(ipAddress);
+                    MessageBox.Show($"There are {sharedItemsCount} shared items in the root folder of \\{ipAddress}.", "Shared Items Count");
+                }
+                else
+                {
+                    MessageBox.Show("Failed to access the shared folder using current user credentials.", "Access Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+
+
+        // Method to access shared folder using the current user's credentials
+        private bool AccessSharedFolderWithCurrentUserCredentials(string ipAddress)
+        {
+            try
+            {
+                string networkPath = $@"\\{ipAddress}\";
+
+                // Run the 'net use' command to map the network share using the current user's credentials
+                string command = $"/C net use {networkPath}";
+
+                Process process = new Process();
+                process.StartInfo.FileName = "cmd.exe";
+                process.StartInfo.Arguments = command;
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden; // Hide the command window
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+
+                process.Start();
+
+                // Capture standard output and errors
+                string output = process.StandardOutput.ReadToEnd();
+                string error = process.StandardError.ReadToEnd();
+
+                process.WaitForExit();
+
+                // Log the command output for debugging purposes
+                Console.WriteLine($"Output: {output}");
+                Console.WriteLine($"Error: {error}");
+
+                // Check if the network path is accessible
+                if (Directory.Exists(networkPath))
+                {
+                    Console.WriteLine($"Network path {networkPath} is accessible.");
+                    return true; // The folder is accessible
+                }
+                else
+                {
+                    Console.WriteLine($"Network path {networkPath} is NOT accessible.");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error accessing shared folder: {ex.Message}");
+                return false;
+            }
+        }
+        // Method to map network share to a local drive letter using 'net use'
+        private bool MapNetworkShare(string ipAddress, string username, string password)
+        {
+            try
+            {
+                string netUseCommand = $"net use \\\\{ipAddress} /user:{username} {password}";
+                ProcessStartInfo processStartInfo = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = "/c " + netUseCommand,  // /c to run the command and close the shell
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (Process process = Process.Start(processStartInfo))
+                {
+                    using (StreamReader reader = process.StandardOutput)
+                    {
+                        string output = reader.ReadToEnd();
+                        if (output.Contains("The command completed successfully"))
+                        {
+                            return true; // Successfully mapped the network drive
+                        }
+                        else
+                        {
+                            Console.WriteLine("Error mapping network drive: " + output);
+                            return false;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error mapping network share: {ex.Message}");
+                return false;
+            }
+        }
+
+
+        // Method to retrieve the current user's credentials (username and password)
+        private Tuple<string, string> GetCurrentUserCredentials()
+        {
+            // Get the current Windows user identity
+            var currentUser = WindowsIdentity.GetCurrent();
+            string username = currentUser.Name;
+
+            // For simplicity, let's assume that we use the current user's domain and password
+            // In a real scenario, the password should be managed securely
+            string password = "YourPassword"; // Ideally, you would securely retrieve the password.
+
+            return new Tuple<string, string>(username, password);
+        }
+
+
 
         // Method to download shared folders
         private void DownloadSharedFolders(string ipAddress)
@@ -340,30 +476,52 @@ namespace NetCrawler
             }
         }
 
-        // method to query shared folders on host
-        private int GetSharedFoldersCount(string ipAddress)
-        {
-            int sharedFoldersCount = 0;
 
+
+        // method to query shared folders on host
+
+        private bool CheckCredentialsRequired(string ipAddress)
+        {
             try
             {
                 // Form the network share path
                 string sharedFolderPath = $@"\\{ipAddress}\";
 
-                // Check if the directory is accessible
-                if (Directory.Exists(sharedFolderPath))
-                {
-                    // Get the list of directories in the share
-                    string[] directories = Directory.GetDirectories(sharedFolderPath);
-
-                    // Count the directories (i.e., shared folders)
-                    sharedFoldersCount = directories.Length;
-                }
+                // Try accessing the share. If credentials are required, this will throw an UnauthorizedAccessException.
+                Directory.GetDirectories(sharedFolderPath);
+                return false; // No credentials required
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return true; // Credentials required
             }
             catch (Exception ex)
             {
-                // Handle error (e.g., access issues)
-                Console.WriteLine($"Error accessing shared folder at {ipAddress}: {ex.Message}");
+                Console.WriteLine($"Error checking credentials for {ipAddress}: {ex.Message}");
+                return false; // Assume no credentials required in case of other errors
+            }
+        }
+        // Example method to count shared folders in the root directory
+        private int GetSharedFoldersCount(string ipAddress)
+        {
+            int sharedFoldersCount = 0;
+            string sharedFolderPath = $@"\\{ipAddress}\";
+
+            try
+            {
+                if (Directory.Exists(sharedFolderPath))
+                {
+                    string[] directories = Directory.GetDirectories(sharedFolderPath);
+                    sharedFoldersCount = directories.Length;
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                MessageBox.Show("Access denied. Please check your credentials.", "Access Denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error accessing shared folder: {ex.Message}");
             }
 
             return sharedFoldersCount;
@@ -459,6 +617,7 @@ namespace NetCrawler
                     // Scan ports asynchronously
                     int[] openPorts = await ScanOpenFileSharingPortsAsync(ip);
                     int sharedFoldersCount = GetSharedFoldersCount(ip);
+                    bool credentialsRequired = CheckCredentialsRequired(ip);
 
                     // Convert pingTime to long if possible
                     if (long.TryParse(pingTime, out long pingTimeValue))
@@ -473,11 +632,13 @@ namespace NetCrawler
                             existingItem.SubItems[3].Text = $"{pingTimeValue} ms";
                             existingItem.SubItems[4].Text = sharedFoldersCount.ToString();
                             existingItem.SubItems[5].Text = string.Join(", ", openPorts);
+                            existingItem.SubItems[6].Text = credentialsRequired ? "Yes" : "No";
                         }
                         else
                         {
                             // Create a new item and add it to the ListView
                             ListViewItem item = CreateListViewItem(ip, hostName, osInfo, pingTimeValue, 0, openPorts); // Pass openPorts here
+                            item.SubItems.Add(credentialsRequired ? "Yes" : "No");
                             listView1.Items.Add(item);
                         }
                     }
