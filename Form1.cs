@@ -68,12 +68,19 @@ namespace NetCrawler
                 {
                     string message = $"Shared Folders ({sharedFolders.Count}):\n" + string.Join("\n", sharedFolders);
                     MessageBox.Show(message, "Shared Items List");
+
+                    // Update the "Shared Folders" column in the ListView
+                    listView1.SelectedItems[0].SubItems[4].Text = sharedFolders.Count.ToString();
                 }
                 else
                 {
                     MessageBox.Show("No shared folders found or access denied.", "Access Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                    // Update the "Shared Folders" column to indicate no shares
+                    listView1.SelectedItems[0].SubItems[4].Text = "0";
                 }
             }
+
         }
         private List<string> GetSharedFoldersUsingNetView(string ipAddress)
         {
