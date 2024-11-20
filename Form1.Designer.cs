@@ -70,7 +70,7 @@
             this.listView1.HideSelection = false;
             this.listView1.Location = new System.Drawing.Point(15, 255);
             this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(702, 536);
+            this.listView1.Size = new System.Drawing.Size(702, 690);
             this.listView1.TabIndex = 4;
             this.listView1.UseCompatibleStateImageBehavior = false;
             // 
@@ -132,7 +132,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(727, 803);
+            this.ClientSize = new System.Drawing.Size(727, 957);
             this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.auditBtn);
             this.Controls.Add(this.locaddsCmb);

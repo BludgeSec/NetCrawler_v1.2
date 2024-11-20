@@ -31,9 +31,9 @@ namespace NetCrawler
             listView1.View = View.Details;
             listView1.Columns.Add("IP Address", 100);
             listView1.Columns.Add("Hostname", 180);
-            listView1.Columns.Add("Response Time", 50);
+            listView1.Columns.Add("Response Time", 110);
             listView1.Columns.Add("Probable O/S", 80);
-            listView1.Columns.Add("Shared Folders", 50);
+            listView1.Columns.Add("Root Shares", 80);
             listView1.Columns.Add("Open SMB Ports", 150);
 
         //Context menu options for right clicking on an ip address
@@ -59,6 +59,7 @@ namespace NetCrawler
         }
 
         //Method for listing number and names of shared items in a message box popup
+        //To be replaced with a tree view window
 
         private void ListSharedItemsItem_Click(object sender, EventArgs e)
         {
@@ -84,6 +85,8 @@ namespace NetCrawler
             }
 
         }
+
+        //Method to scan for shared folders
         private List<string> GetSharedFoldersUsingNetView(string ipAddress)
         {
             var sharedFolders = new List<string>();
@@ -617,5 +620,7 @@ namespace NetCrawler
         }
         private void DownloadSharedFoldersItem_Click(object sender, EventArgs e) { }
         private void ScanPortsMenuItem_Click(object sender, EventArgs e) { }
+
+
     }
 }
