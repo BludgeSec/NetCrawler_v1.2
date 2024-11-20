@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Text;
 
 namespace NetCrawler
 {
@@ -285,6 +286,45 @@ namespace NetCrawler
                 auditForm.LoadTreeView(allFolderNodes);
                 auditForm.Show();
 
+                // Accumulate the data for all nodes in a string builder
+                StringBuilder reportContent = new StringBuilder();
+
+                // Loop through all the nodes and add their text to the report
+                foreach (TreeNode node in allFolderNodes)
+                {
+                    reportContent.AppendLine($"IP Address: {node.Text}");
+                    foreach (TreeNode childNode in node.Nodes)
+                    {
+                        reportContent.AppendLine($"  - {childNode.Text}");
+                    }
+                }
+
+                // Show SaveFileDialog to prompt the user to choose a location to save the file
+                using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+                {
+                    saveFileDialog.Filter = "Text Files (*.txt)|*.txt";
+                    saveFileDialog.DefaultExt = "txt";
+                    saveFileDialog.AddExtension = true;
+                    saveFileDialog.Title = "Save Shared Items Report";
+
+                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        // Get the selected file path from the dialog
+                        string filePath = saveFileDialog.FileName;
+
+                        // Write the accumulated report content to the chosen file
+                        try
+                        {
+                            File.WriteAllText(filePath, reportContent.ToString());
+                            MessageBox.Show($"The shared items have been written to: {filePath}", "Report Generated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Error writing to file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+
                 // Hide the progress bar and re-enable UI elements
                 progressBar1.Visible = false;
                 ScanNW.Enabled = true;
@@ -295,6 +335,8 @@ namespace NetCrawler
                 MessageBox.Show("Please scan the network first.");
             }
         }
+
+
 
         private async Task<List<TreeNode>> GetSharedFoldersAndSubItemsAsync(string ipAddress)
         {
@@ -327,6 +369,71 @@ namespace NetCrawler
 
             return folderNodes;
         }
+
+        private async Task WriteSharedFoldersToFile(string ipAddress, string outputFilePath)
+        {
+            // Get the shared folders for the IP address
+            var sharedFolders = await GetSharedFoldersAndSubItemsAsync(ipAddress);
+
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(outputFilePath))
+                {
+                    // Write a header
+                    writer.WriteLine($"Shared Items for IP Address: {ipAddress}");
+                    writer.WriteLine($"Generated on: {DateTime.Now}");
+                    writer.WriteLine(new string('-', 50));
+
+                    // Loop through each shared folder
+                    foreach (var folderNode in sharedFolders)
+                    {
+                        // Write the root folder (shared folder)
+                        await WriteFolderToFile(folderNode, writer, 0);
+                    }
+
+                    writer.WriteLine(new string('-', 50));
+                    writer.WriteLine("End of report");
+                }
+
+                MessageBox.Show($"The shared items have been written to: {outputFilePath}", "Report Generated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error writing to file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async Task WriteFolderToFile(TreeNode folderNode, StreamWriter writer, int indentLevel)
+        {
+            // Indent the folder based on the indentLevel
+            string indent = new string(' ', indentLevel * 2);
+            writer.WriteLine($"{indent}Folder: {folderNode.Text}");
+
+            string folderPath = folderNode.Tag.ToString(); // Full folder path
+
+            // Get the sub-items (files and subdirectories) for the folder
+            var subItems = await GetSubItemsAsync(folderPath);
+
+            foreach (var subItem in subItems)
+            {
+                if (Directory.Exists(subItem))
+                {
+                    // If it's a directory, call recursively to list subfolders
+                    var subFolderNode = new TreeNode(subItem)
+                    {
+                        Tag = subItem
+                    };
+
+                    await WriteFolderToFile(subFolderNode, writer, indentLevel + 1);
+                }
+                else
+                {
+                    // If it's a file, simply write it
+                    writer.WriteLine($"{indent}  File: {subItem}");
+                }
+            }
+        }
+
 
 
         private async Task<List<string>> GetSubItemsAsync(string folderPath)
