@@ -18,6 +18,7 @@ namespace NetCrawler
             InitializeComponent();
             GetIP.Click += GetIP_Click;
             ScanNW.Click += ScanNW_Click;
+            auditBtn.Click += auditBtn_Click;
             InitializeListView();
             this.Load += Form1_Load;
         }
@@ -221,18 +222,161 @@ namespace NetCrawler
         }
 
         //Method for scanning network, retrieving active IP addresses and other information
-        private async void ScanNW_Click(object sender, EventArgs e)
+        private void ScanNW_Click(object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty(subnet))
             {
-                List<string[]> activeIPs = await ScanNetworkAsync(subnet);
-                PopulateListView(activeIPs);
+                // Show the progress bar
+                progressBar1.Style = ProgressBarStyle.Marquee;
+                progressBar1.Visible = true;
+
+                // Disable other UI elements while scan is running
+                ScanNW.Enabled = false;
+                GetIP.Enabled = false;
+
+                // Start the scan asynchronously
+                Task.Run(async () =>
+                {
+                    List<string[]> activeIPs = await ScanNetworkAsync(subnet);
+
+                    // Update ListView after scan completes
+                    this.Invoke((Action)(() => PopulateListView(activeIPs)));
+
+                    // Hide the progress bar and re-enable UI elements
+                    this.Invoke((Action)(() =>
+                    {
+                        progressBar1.Visible = false;
+                        ScanNW.Enabled = true;
+                        GetIP.Enabled = true;
+                    }));
+                });
             }
             else
             {
                 MessageBox.Show("Please get the local IP address first.");
             }
         }
+
+        private async void auditBtn_Click(object sender, EventArgs e)
+        {
+            if (listView1.Items.Count > 0)
+            {
+                // Show progress bar while rescanning
+                progressBar1.Style = ProgressBarStyle.Marquee;
+                progressBar1.Visible = true;
+
+                // Disable other UI elements while scan is running
+                ScanNW.Enabled = false;
+                auditBtn.Enabled = false;
+
+                // Start rescanning asynchronously
+                List<TreeNode> allFolderNodes = new List<TreeNode>();
+                foreach (ListViewItem item in listView1.Items)
+                {
+                    string ipAddress = item.Text; // Get IP address from ListView
+
+                    // Get the shared folders and sub-items for this IP
+                    var folderNodes = await GetSharedFoldersAndSubItemsAsync(ipAddress);
+                    allFolderNodes.AddRange(folderNodes);
+                }
+
+                // Now open a new form and show the tree view
+                AuditForm auditForm = new AuditForm();
+                auditForm.LoadTreeView(allFolderNodes);
+                auditForm.Show();
+
+                // Hide the progress bar and re-enable UI elements
+                progressBar1.Visible = false;
+                ScanNW.Enabled = true;
+                auditBtn.Enabled = true;
+            }
+            else
+            {
+                MessageBox.Show("Please scan the network first.");
+            }
+        }
+
+        private async Task<List<TreeNode>> GetSharedFoldersAndSubItemsAsync(string ipAddress)
+        {
+            var sharedFolders = GetSharedFoldersUsingNetView(ipAddress); // Existing method to get shared folders
+            var folderNodes = new List<TreeNode>();
+
+            foreach (var folder in sharedFolders)
+            {
+                string folderPath = $@"\\{ipAddress}\{folder}";
+
+                // Create a TreeNode for the shared folder
+                var rootNode = new TreeNode(folder)
+                {
+                    Tag = folderPath  // Store the full path in the Tag
+                };
+
+                // Fetch sub-items (files and directories) asynchronously
+                var subItems = await GetSubItemsAsync(folderPath);
+                foreach (var subItem in subItems)
+                {
+                    var subItemNode = new TreeNode(subItem)
+                    {
+                        Tag = subItem // Store the full sub-item path
+                    };
+                    rootNode.Nodes.Add(subItemNode);
+                }
+
+                folderNodes.Add(rootNode);
+            }
+
+            return folderNodes;
+        }
+
+
+        private async Task<List<string>> GetSubItemsAsync(string folderPath)
+        {
+            var subItems = new List<string>();
+            try
+            {
+                // Add directories and their files recursively
+                await Task.Run(() => TraverseDirectories(folderPath, subItems));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching sub-items for {folderPath}: {ex.Message}");
+            }
+
+            return subItems;
+        }
+
+        // Recursive method to get subfolders and files
+        private void TraverseDirectories(string currentDirectory, List<string> subItems)
+        {
+            try
+            {
+                // Add files in the current directory
+                var files = Directory.GetFiles(currentDirectory);
+                subItems.AddRange(files);
+
+                // Recurse into subdirectories
+                var directories = Directory.GetDirectories(currentDirectory);
+                foreach (var dir in directories)
+                {
+                    subItems.Add(dir); // Add the subdirectory to the list
+
+                    // Recursively traverse this directory
+                    TraverseDirectories(dir, subItems);
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Handle cases where access is denied to a folder
+                Console.WriteLine($"Access denied: {currentDirectory}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error traversing directory {currentDirectory}: {ex.Message}");
+            }
+        }
+
+
+
         private async Task<List<string[]>> ScanNetworkAsync(string subnet)
         {
             var tasks = new List<Task<string[]>>();
@@ -240,7 +384,7 @@ namespace NetCrawler
             for (int i = 1; i < 255; i++)
             {
                 string ip = $"{subnet}.{i}";
-                tasks.Add(PingAndGetHostNameAndPortsAsync(ip)); // Updated to include port scanning
+                tasks.Add(PingAndGetHostNameAndPortsAsync(ip)); // Keep the existing ping and info fetch
             }
 
             var results = await Task.WhenAll(tasks);
@@ -254,8 +398,30 @@ namespace NetCrawler
                 }
             }
 
+            // Now, after scanning the network, get the shared folders for each active IP asynchronously
+            var folderTasks = new List<Task>();
+
+            foreach (var ipInfo in activeIPs)
+            {
+                string ipAddress = ipInfo[0]; // Get the IP Address
+                var task = Task.Run(() =>
+                {
+                    var sharedFolders = GetSharedFoldersUsingNetView(ipAddress);
+                    int sharedFolderCount = sharedFolders.Count;  // Count the number of shared folders
+
+                    // Update shared folder count in the ListView in a thread-safe manner
+                    this.Invoke((Action)(() =>
+                    {
+                        ipInfo[4] = sharedFolderCount.ToString();  // Update column 4 with the count
+                    }));
+                });
+                folderTasks.Add(task);
+            }
+
+            await Task.WhenAll(folderTasks); // Wait for all shared folder tasks to complete
             return activeIPs;
         }
+
 
         private async Task<string[]> PingAndGetHostNameAndPortsAsync(string ip)
         {
@@ -300,8 +466,8 @@ namespace NetCrawler
         }
         private string GetOperatingSystem(int ttl)
         {
-            if (ttl <= 64) return "Windows";
-            else if (ttl <= 128) return "Linux";
+            if (ttl <= 128) return "Windows";
+            else if (ttl <= 64) return "Linux";
             else return "Other";
         }
         private void PopulateListView(List<string[]> activeIPs)

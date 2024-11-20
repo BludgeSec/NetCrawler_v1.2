@@ -36,6 +36,8 @@
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.locaddsCmb = new System.Windows.Forms.ComboBox();
+            this.auditBtn = new System.Windows.Forms.Button();
+            this.progressBar1 = new System.Windows.Forms.ProgressBar();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             this.SuspendLayout();
@@ -66,16 +68,16 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.listView1.HideSelection = false;
-            this.listView1.Location = new System.Drawing.Point(15, 214);
+            this.listView1.Location = new System.Drawing.Point(15, 255);
             this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(550, 448);
+            this.listView1.Size = new System.Drawing.Size(702, 536);
             this.listView1.TabIndex = 4;
             this.listView1.UseCompatibleStateImageBehavior = false;
             // 
             // lblLocIP
             // 
             this.lblLocIP.AutoSize = true;
-            this.lblLocIP.Location = new System.Drawing.Point(12, 171);
+            this.lblLocIP.Location = new System.Drawing.Point(12, 209);
             this.lblLocIP.Name = "lblLocIP";
             this.lblLocIP.Size = new System.Drawing.Size(46, 13);
             this.lblLocIP.TabIndex = 5;
@@ -85,9 +87,9 @@
             // 
             this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
             this.pictureBox1.InitialImage = ((System.Drawing.Image)(resources.GetObject("pictureBox1.InitialImage")));
-            this.pictureBox1.Location = new System.Drawing.Point(278, 12);
+            this.pictureBox1.Location = new System.Drawing.Point(405, 12);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(287, 156);
+            this.pictureBox1.Size = new System.Drawing.Size(310, 210);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox1.TabIndex = 6;
             this.pictureBox1.TabStop = false;
@@ -97,7 +99,7 @@
             this.pictureBox2.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox2.Image")));
             this.pictureBox2.Location = new System.Drawing.Point(13, 12);
             this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(254, 108);
+            this.pictureBox2.Size = new System.Drawing.Size(386, 108);
             this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox2.TabIndex = 7;
             this.pictureBox2.TabStop = false;
@@ -105,16 +107,34 @@
             // locaddsCmb
             // 
             this.locaddsCmb.FormattingEnabled = true;
-            this.locaddsCmb.Location = new System.Drawing.Point(15, 187);
+            this.locaddsCmb.Location = new System.Drawing.Point(15, 228);
             this.locaddsCmb.Name = "locaddsCmb";
-            this.locaddsCmb.Size = new System.Drawing.Size(550, 21);
+            this.locaddsCmb.Size = new System.Drawing.Size(700, 21);
             this.locaddsCmb.TabIndex = 8;
+            // 
+            // auditBtn
+            // 
+            this.auditBtn.Location = new System.Drawing.Point(274, 121);
+            this.auditBtn.Name = "auditBtn";
+            this.auditBtn.Size = new System.Drawing.Size(125, 46);
+            this.auditBtn.TabIndex = 9;
+            this.auditBtn.Text = "Audit Network";
+            this.auditBtn.UseVisualStyleBackColor = true;
+            // 
+            // progressBar1
+            // 
+            this.progressBar1.Location = new System.Drawing.Point(143, 174);
+            this.progressBar1.Name = "progressBar1";
+            this.progressBar1.Size = new System.Drawing.Size(125, 23);
+            this.progressBar1.TabIndex = 10;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(575, 674);
+            this.ClientSize = new System.Drawing.Size(727, 803);
+            this.Controls.Add(this.progressBar1);
+            this.Controls.Add(this.auditBtn);
             this.Controls.Add(this.locaddsCmb);
             this.Controls.Add(this.pictureBox2);
             this.Controls.Add(this.pictureBox1);
@@ -143,6 +163,8 @@
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.PictureBox pictureBox2;
         private System.Windows.Forms.ComboBox locaddsCmb;
+        private System.Windows.Forms.Button auditBtn;
+        private System.Windows.Forms.ProgressBar progressBar1;
     }
 }
 
